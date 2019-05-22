@@ -8,6 +8,10 @@
 # Example code in package build process
 *-Ex.R
 
+# Misc files
+.DS_Store
+*.m~
+
 # Output files from R CMD build
 /*.tar.gz
 
