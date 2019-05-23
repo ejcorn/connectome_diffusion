@@ -1,5 +1,5 @@
 rm(list=ls())
-basedir <- '~/Dropbox/Neurodegeneration/MouseDiffusion/'
+basedir <- '~/Dropbox/Neurodegeneration/MouseDiffusion/connectome_diffusion/'
 setwd(basedir)
 opdir <- 'asyndiffusion1/'
 dir.create(opdir,recursive = T)
@@ -61,4 +61,4 @@ mat.cmd <- paste(params$matlab.path,' -nojvm -r \'cd(\'',basedir,'code/nullmodel
 system(mat.cmd)
 grp <- 'NTG'
   source('code/nullmodels/analyzespread_anterograde.R')
-  source('nullmodels/nullmodels.R')
+  source('code/nullmodels/nullmodels.R')
