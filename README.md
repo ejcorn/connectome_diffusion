@@ -15,7 +15,8 @@ Master branch contains 4 major folders:
 
 ## Input specification
 
-The file ‘pipeline.R’ is located in the main directory. This file will coordinate the sequential execution of all scripts within the code/ folder, generating all the figures in the paper and more. At the top of ‘pipeline.R,’ one must select their own home directory (path to the main directory containing the above 4 folders) and path to MATLAB binary (matlab.path), in addition to the following variables:
+The file ‘pipeline.R’ is located in the main directory. This file will coordinate the sequential execution of all scripts within the code/ folder, generating all the figures in the paper and more. At the top of ‘pipeline.R,’ one must select their own home directory (basedir, path to the main directory containing the above 4 folders) and path to MATLAB binary (matlab.path), in addition to the following variables:
+  - opdir: name of output directory that contains all results, which will be housed in basedir
   - grps: character vector containing the name of groups in data file to test. For our data set, these were 'NTG' and 'G20'
 
 ## Questions, suggestions, comments?
