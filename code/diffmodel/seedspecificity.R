@@ -1,11 +1,3 @@
-library(ggplot2)
-library(stringr)
-library(R.matlab)
-library(cowplot)
-library(expm)
-library(viridis)
-library(RColorBrewer)
-
 #################
 ### Load data ###
 #################
@@ -37,12 +29,11 @@ load(file = paste(params$opdir,'processed/Lout.RData',sep=''))
 # fits from iCPU
 c.rng <- seq(0.01,10,length.out = 100) # scaling parameter range
 log.path <- lapply(Grp.mean, function(x) log(x,base=10))
-c.Grp <- c.fit(log.path,L.out,tp,'R CPu',c.rng) # fit time scale
+c.Grp <- c.fit(log.path,L.out,tp,'R CPu',c.rng,ROInames) # fit time scale
 mask <- lapply(log.path, function(x) x != -Inf) # find regions with 0 path at each time point to exclude
 n.regions <- length(ROInames)
-Xo <- matrix(0,nrow=n.regions)
-Xo[which(ROInames == 'R CPu')] <- 1 # seed ROI with path
-Xt <- lapply(1:length(tp), function(t) log(expm(-L.out*tp[t]*c.Grp) %*% Xo,base=10))
+Xo <- make.Xo('R CPu',ROInames) # seed ROI with path
+Xt <- lapply(1:length(tp), function(t) log(predict.Lout(L.out,Xo,c.Grp,tp[t]),base=10))
 r.SC <- lapply(1:length(tp), function(t)
   cor(log.path[[t]][mask[[t]]],Xt[[t]][mask[[t]]]))
 
@@ -55,8 +46,8 @@ for(S in 1:length(alt.seeds)){
   seed <- alt.seeds[S]
   Xo.null <- matrix(0,nrow=n.regions)
   Xo.null[seed] <- 1
-  c.null <- c.fit(log.path,L.out,tp,ROInames[seed],c.rng)
-  Xt.null <- lapply(c(1,3,6), function(t) expm(-L.out*t*c.null) %*% Xo.null)
+  c.null <- c.fit(log.path,L.out,tp,ROInames[seed],c.rng,ROInames)
+  Xt.null <- lapply(c(1,3,6), function(t) predict.Lout(L.out,Xo.null,c.null,t))
   
   pred <- lapply(Xt.null, function(x) log(x,base=10))
   null.cors[S,] <- sapply(1:length(tp), function(M)
@@ -64,7 +55,8 @@ for(S in 1:length(alt.seeds)){
 }
 
 # compute p-value as probability that other seeds predict observed path better than iCPu seed
-seed.region.pvals <- unlist(sapply(1:length(tp), function(M) paste('p =',signif(mean(r.SC[M] < null.cors[,M]),2))))
+all.fits <- rbind(null.cors,unlist(r.SC)) # join all fits to calculate the percentile of the fit
+seed.region.pct <- unlist(sapply(1:length(tp), function(M) print(paste('Month',tp[M],'pctile =',100*calc.pctile(r.SC[[M]],all.fits[,M])))))
 better.regions <- lapply(1:length(tp), function(M) which(r.SC[M] < null.cors[,M]))
 save(better.regions,null.cors,file = paste(savedir,grp,'betterfitseeds.RData',sep=''))
 better.regions <- unlist(better.regions)
@@ -75,7 +67,7 @@ months <- do.call('c',lapply(1:length(tp), function(M) rep(as.character(tp[M]),l
 p.null.seeds <- ggplot() + 
   geom_jitter(aes(x=months,y = as.vector(null.cors)),color ='#5F4B8B',alpha = 0.5,stroke = 0,size = 1, position = position_dodge(width=1)) +
   geom_point(aes(x=as.character(tp),y=as.numeric(r.SC)),shape = 18,color = 'black',size=2) + 
-  geom_text(aes(x=as.character(tp),y=0.8,label = seed.region.pvals),size=2.5) +
+  #geom_text(aes(x=as.character(tp),y=0.8,label = seed.region.pvals),size=2.5) +
   xlab('Month') + ylab('Fit') + ggtitle('Actual vs. Random Seed') +
   theme(text = element_text(size=8),plot.title = element_text(hjust=0.5,size=8)) +
   theme(axis.text.x = element_text(size=8)) + theme(axis.text.y = element_text(size=8))

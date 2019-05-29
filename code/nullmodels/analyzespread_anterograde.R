@@ -1,11 +1,3 @@
-library(ggplot2)
-library(stringr)
-library(R.matlab)
-library(cowplot)
-library(expm)
-library(viridis)
-library(RColorBrewer)
-
 #################
 ### Load data ###
 #################
@@ -41,7 +33,7 @@ Grp.mean <- lapply(Mice, function(x) colMeans(x,na.rm = T))
 # convention is the opposite, so when I transpose W
 # I am capturing "anterograde" connectivity
 
-W <- readMat(params$opdir,'processed/W.mat')$W
+W <- readMat(paste(params$opdir,'processed/W.mat',sep=''))$W
 n.regions <- nrow(W)
 W <- W * !diag(n.regions) # get rid of diagonal
 W <- W / (max(Re(eigen(W)$values))) # scale to max eigenvalue
@@ -54,14 +46,14 @@ save(L.out,file = paste(savedir,'Loutanterograde.RData',sep=''))
 # Fit time scaling parameter
 c.rng <- seq(0.01,10,length.out = 100) # scaling parameter
 log.path <- lapply(Grp.mean, function(x) log(x,base=10))
-c.Grp <- c.fit(log.path,L.out,tp,ROI,c.rng)
+c.Grp <- c.fit(log.path,L.out,tp,ROI,c.rng,ROInames)
 
 ###############################################
 ### Test model at observed points for group ###
 ###############################################
 
 Xo <- make.Xo(ROI,ROInames)
-Xt.Grp <- lapply(as.list(tp), function(t) expm(-L.out*t*c.Grp) %*% Xo)
+Xt.Grp <- lapply(as.list(tp), function(t) predict.Lout(L.out,Xo,c.Grp,t))
 p.SC <- p.vuln <- list()
 r.SC <- matrix(nrow=length(tp))
 vulnerability <- mask <- list()

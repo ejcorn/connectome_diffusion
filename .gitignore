@@ -12,6 +12,9 @@
 .DS_Store
 *.m~
 
+# ignore results
+asyndiffusion*
+
 # Output files from R CMD build
 /*.tar.gz
 

@@ -1,7 +1,3 @@
-library(ggplot2)
-library(stringr)
-library(R.matlab)
-
 #################
 ### Load data ###
 #################

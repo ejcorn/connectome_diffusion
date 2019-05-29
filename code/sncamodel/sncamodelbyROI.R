@@ -1,11 +1,3 @@
-library(ggplot2)
-library(stringr)
-library(R.matlab)
-library(cowplot)
-library(expm)
-library(viridis)
-library(RColorBrewer)
-
 #################
 ### Load data ###
 #################
@@ -34,18 +26,14 @@ Grp.mean <- lapply(Mice, function(x) colMeans(x,na.rm = T))
 ### Generate dist. of out-of-sample prediction ###
 ##################################################
 
-W <- readMat('diffmodel/W.mat')$W
-n.regions <- nrow(W)
-W <- W * !diag(n.regions) # get rid of diagonal
-W <- diag(as.numeric(Synuclein)) %*% W
-W <- W / (max(Re(eigen(W)$values))) # scale to max eigenvalue
+load(paste(params$opdir,'processed/Lout_syn.RData',sep=''))
 
-L.out <- get.L.out(W)
-
-# fits from iCPU
-c.rng <- seq(0.01,2,length.out = 50) # scaling parameter range
+# Fit time scaling parameter
+c.rng <- seq(0.01,10,length.out = 100) # scaling parameter
 log.path <- lapply(Grp.mean, function(x) log(x,base=10))
-c.Grp <- c.fit(log.path,L.out,tp,'R CPu',c.rng)
+mask <- lapply(log.path, function(x) x != -Inf)
+lapply(1:length(tp), function(i) cor(log.path[[i]][mask[[i]]],Synuclein[mask[[i]]]))
+c.Grp <- c.fit(log.path,L.out,tp,'R CPu',c.rng,ROInames)
 
 ##################################
 ### Generate model time series ###
@@ -59,12 +47,11 @@ p.ts <- function(df.plt,tp,ttl){
   return(p)
 }
 
-Xo <- matrix(0,nrow=n.regions)
-Xo[which(ROInames == 'R CPu')] <- 1
+Xo <- make.Xo('R CPu',ROInames)
 n.t <- 100 # number of time points to plot
 t.rng <- seq(0.1,36,length.out=n.t)
 L.out[49,49] <- 0.8
-Xt.Grp <- lapply(t.rng, function(t) expm(-L.out*t*c.Grp) %*% Xo)
+Xt.Grp <- lapply(t.rng, function(t) predict.Lout(L.out,Xo,c.Grp,t))
 Xt.Grp <- do.call('cbind',Xt.Grp)
 t.plt <- t(do.call('cbind',lapply(1:n.regions, function(x) t.rng)))
 r.plt <- do.call('cbind',lapply(1:n.t, function(x) 1:n.regions))
@@ -77,8 +64,7 @@ ggsave(p,filename = paste(savedir,grp,'predictedROItimeseries.pdf',sep=''),units
 
 ### Understanding model dynamics ###
 
-Xo <- matrix(0,nrow=n.regions)
-Xo[which(ROInames == 'R CPu')] <- 1
+Xo <- make.Xo('R CPu',ROInames)
 n.t <- 100 # number of time points to plot
 t.rng <- seq(0.1,500,length.out=n.t)
 Xt.Grp <- lapply(t.rng, function(t) expm(-L.out*t*c.Grp) %*% Xo)

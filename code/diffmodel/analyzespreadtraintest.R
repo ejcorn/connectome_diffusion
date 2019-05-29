@@ -1,11 +1,3 @@
-library(ggplot2)
-library(stringr)
-library(R.matlab)
-library(cowplot)
-library(expm)
-library(viridis)
-library(RColorBrewer)
-
 #################
 ### Load data ###
 #################
@@ -42,8 +34,7 @@ path.data <- lapply(tp,function(M) path.data[path.data$`Time post-injection (mon
 ROI <- 'R CPu'
 n.regions <- length(ROInames)
 r.SC <- list()
-Xo <- matrix(0,nrow=n.regions)
-Xo[which(ROInames == 'R CPu')] <- 1 # seed ROI with path
+Xo <- make.Xo('R CPu',ROInames) # seed ROI with path
 
 n.reps <- 100
 tf <- 0.5
@@ -59,9 +50,9 @@ for(REP in 1:n.reps){
   Grp.mean.test <- lapply(path.data.test, function(x) log(colMeans(x,na.rm = T),base=10))
   
   # fit time scale parameter on training data
-  c.train <- c.fit(Grp.mean.train,L.out,tp,ROI,c.rng)
+  c.train <- c.fit(Grp.mean.train,L.out,tp,ROI,c.rng,ROInames)
   # predict path
-  Xt <- lapply(1:length(tp), function(t) log(expm(-L.out*tp[t]*c.train) %*% Xo,base=10))
+  Xt <- lapply(1:length(tp), function(t) log(predict.Lout(L.out,Xo,c.train,tp[t]),base=10))
   # compute fit with test data
   mask <- lapply(Grp.mean.test, function(x) x != -Inf)
   r.SC[[REP]] <- sapply(1:length(tp), function(t)

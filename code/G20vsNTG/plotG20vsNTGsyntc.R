@@ -18,11 +18,8 @@ df <- data.frame(y=c(unlist(c.train.NTG),unlist(c.train.G20)),
                  x=c(rep('NTG',n.reps),rep('G20',n.reps)))
 
 w.t <- wilcox.test(x=unlist(c.train.NTG),y=unlist(c.train.G20),conf.int=T)
+print(w.t)
 p <- ggplot(df,aes(y=y,x=x)) + geom_jitter(alpha=0.5,size=1,stroke=0) + ylab('Time Constant') + theme_classic()+
   theme(text=element_text(size=8)) + xlab('') + geom_text(aes(x='G20',y= 0.35,label = paste('p =',signif(w.t$p.value,2))),size=2)
 p
 ggsave(plot = p,filename = paste(savedir,'SynTCjitterTF',tf,'.pdf',sep=''), height=2,width=2,units='in')
-
-low.c.fits <- do.call('rbind',r.NTG[which(unlist(c.train.NTG) < 0.4)])
-hi.c.fits <- do.call('rbind',r.NTG[which(unlist(c.train.NTG) > 0.4)])
-lapply(1:length(tp), function(i) t.test(hi.c.fits[,i],low.c.fits[,i]))

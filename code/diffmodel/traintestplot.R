@@ -1,11 +1,3 @@
-library(ggplot2)
-library(stringr)
-library(R.matlab)
-library(cowplot)
-library(expm)
-library(viridis)
-library(RColorBrewer)
-
 rm(list= setdiff(ls(),c('params','grp')))
 
 #####################

@@ -1,58 +1,3 @@
-c.fit.old <- function(log.path,L.out,tp,ROI,c.rng){
-  n.regions <- length(log.path[[1]])
-  # initialize Xo vector, path at t=0
-  Xo <- matrix(0,nrow=n.regions)
-  # seed ROI with max path at month 1
-  Xo[which(ROInames == ROI)] <- 1 #max(exp(log.path[[1]]))
-  # exclusion mask... don't count regions with 0 path
-  mask <- lapply(log.path, function(x) x != -Inf)
-  # compute fit at each time point for range of time
-  Xt.sweep <- lapply(1:length(tp), function(t) # continuous time
-    sapply(c.rng, function(c)
-      cor(log.path[[t]][mask[[t]]],log(expm(-L.out*tp[t]*c) %*% Xo,base=10)[mask[[t]]])))
-  c.opt <- sapply(Xt.sweep, function(x) c.rng[which.max(x)])
-  print(c.opt)
-  c <- mean(c.opt)
-  return(c)
-}
-
-c.fit <- function(log.path,L.out,tp,ROI,c.rng){
-  n.regions <- length(log.path[[1]])
-  # initialize Xo vector, path at t=0
-  Xo <- matrix(0,nrow=n.regions)
-  # seed ROI with max path at month 1
-  Xo[which(ROInames == ROI)] <- 1
-  # exclusion mask... don't count regions with 0 path
-  mask <- lapply(log.path, function(x) x != -Inf)
-  # compute fit at each time point for range of time
-  Xt.sweep <- lapply(1:length(tp), function(t) # continuous time
-    sapply(c.rng, function(c)
-      cor(log.path[[t]][mask[[t]]],log(expm(-L.out*tp[t]*c) %*% Xo,base=10)[mask[[t]]])))
-  Xt.sweep <- Reduce('+',Xt.sweep) / length(tp) # mean fit for each tp
-  c <- c.rng[which.max(Xt.sweep)]
-  print(c)
-  return(c)
-}
-
-c.fit.r <- function(log.path,L.out,tp,ROI,c.rng){
-  n.regions <- length(log.path[[1]])
-  # initialize Xo vector, path at t=0
-  Xo <- matrix(0,nrow=n.regions)
-  # seed ROI with max path at month 1
-  Xo[which(ROInames == ROI)] <- 1
-  # exclusion mask... don't count regions with 0 path
-  mask <- lapply(log.path, function(x) x != -Inf)
-  Xt.sweep <- lapply(1:length(tp), function(t) # continuous time
-    sapply(c.rng, function(c)
-      cor(log.path[[t]][mask[[t]]],log(expm(-L.out*tp[t]*c) %*% Xo,base=10)[mask[[t]]])))
-  r <- sapply(Xt.sweep, function(x) max(x)) # best fit for each time point
-  Xt.sweep <- Reduce('+',Xt.sweep) / length(tp) # mean fit for each time point
-  c <- c.rng[which.max(Xt.sweep)]
-  print(c)
-  
-  return(list(c=c,r=r))
-}
-
 get.L.out <- function(W){
   # stepwise prediction, i.e. from one month to the next
   # Where i is row element and j is column element
@@ -67,45 +12,52 @@ get.L.out <- function(W){
 }
 
 make.Xo <- function(ROI,ROInames){
-  n.regions = length(ROInames)
-  Xo <- matrix(0,nrow=n.regions)
-  Xo[which(ROInames == ROI)] <- 1 # seed ROI with path
-  return(Xo)
-}
-
-c.fit.r.old <- function(log.path,L.out,tp,ROI,c.rng){
-  n.regions <- length(log.path[[1]])
+  n.regions <- length(ROInames)
   # initialize Xo vector, path at t=0
   Xo <- matrix(0,nrow=n.regions)
   # seed ROI with max path at month 1
   Xo[which(ROInames == ROI)] <- 1
-  # exclusion mask... don't count regions with 0 path
-  mask <- lapply(log.path, function(x) x != -Inf)
-  Xt.sweep <- lapply(1:length(tp), function(t) # continuous time
-    sapply(c.rng, function(c)
-      cor(log.path[[t]][mask[[t]]],log(expm(-L.out*tp[t]*c) %*% Xo,base=10)[mask[[t]]])))
-  c.opt <- sapply(Xt.sweep, function(x) c.rng[which.max(x)])
-  print(c.opt)
-  c <- mean(c.opt)
-  r <- sapply(Xt.sweep, function(x) max(x))
-  return(list(c=c,r=r))
+  return(Xo)
 }
 
-c.fit.Syn <- function(log.path,L.out,Syn,tp,ROI,c.rng){
-  n.regions <- length(log.path[[1]])
-  # initialize Xo vector, path at t=0
-  Xo <- matrix(0,nrow=n.regions)
-  # seed ROI with max path at month 1
-  Xo[which(ROInames == ROI)] <- max(exp(log.path[[1]]))
+predict.Lout <- function(L,Xo,c,t=1){
+  # Generate prediction for given time points using
+  # L: Laplacian of adjacency matrix
+  # Xo: initial conditions
+  # c: time constant
+  # t: time points
+
+  Xt <- expm(-L*c*t)%*%Xo
+  return(Xt)
+}
+
+c.fit <- function(log.path,L.out,tp,ROI,c.rng,ROInames){
+  Xo <- make.Xo(ROI,ROInames)
+  # exclusion mask... don't count regions with 0 path
+  mask <- lapply(log.path, function(x) x != -Inf)
+  # compute fit at each time point for range of time
+  Xt.sweep <- lapply(1:length(tp), function(t) # continuous time
+    sapply(c.rng, function(c)
+      cor(log.path[[t]][mask[[t]]],log(predict.Lout(L.out,Xo,c,tp[t]),base=10)[mask[[t]]])))
+  Xt.sweep <- Reduce('+',Xt.sweep) / length(tp) # mean fit for each tp
+  c <- c.rng[which.max(Xt.sweep)]
+  print(c)
+  return(c)
+}
+
+c.fit.r <- function(log.path,L.out,tp,ROI,c.rng,ROInames){
+  Xo <- make.Xo(ROI,ROInames)
   # exclusion mask... don't count regions with 0 path
   mask <- lapply(log.path, function(x) x != -Inf)
   Xt.sweep <- lapply(1:length(tp), function(t) # continuous time
     sapply(c.rng, function(c)
-      cor(log.path[[t]],log(expm(-L.out*tp[t]*c) %*% log(Xo,base=10)[mask[[t]]]))))
-  c.opt <- sapply(Xt.sweep, function(x) c.rng[which.max(x)])
-  print(c.opt)
-  c <- mean(c.opt)
-  return(c)
+      cor(log.path[[t]][mask[[t]]],log(predict.Lout(L.out,Xo,c,tp[t]),base=10)[mask[[t]]])))
+  r <- sapply(Xt.sweep, function(x) max(x)) # best fit for each time point
+  Xt.sweep <- Reduce('+',Xt.sweep) / length(tp) # mean fit for each time point
+  c <- c.rng[which.max(Xt.sweep)]
+  print(c)
+  
+  return(list(c=c,r=r))
 }
 
 calc.vuln <- function(vulnerability,ROInames){
@@ -119,4 +71,9 @@ calc.vuln <- function(vulnerability,ROInames){
 fisher.r.to.z <- function(r){
   r <- 0.5*(log(1+r) - log(1-r))
   return(r)
+}
+
+calc.pctile <- function(x.i,x){
+  # for vector x with entry x.i, figure out percentile rank of x.i in x
+  return(which(x.i==sort(x))/length(x))
 }

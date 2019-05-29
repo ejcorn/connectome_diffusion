@@ -1,13 +1,3 @@
-library(ggplot2)
-library(stringr)
-library(R.matlab)
-library(cowplot)
-library(expm)
-library(viridis)
-library(RColorBrewer)
-library(lm.beta)
-library(mgcv)
-
 #################
 ### Load data ###
 #################
@@ -36,7 +26,7 @@ Grp.mean <- lapply(Mice, function(x) colMeans(x,na.rm = T))
 
 load(file = paste(savedir,grp,'betterfitseeds.RData',sep=''))
 alt.seeds <- which(!(ROInames == 'R CPu')) # identify all the regions which were not injected
-W <- readMat('diffmodel/W.mat')$W
+W <- readMat(paste(params$opdir,'processed/W.mat',sep=''))$W
 n.regions <- nrow(W)
 W <- W * !diag(n.regions) # get rid of diagonal
 in.deg <- colSums(W)

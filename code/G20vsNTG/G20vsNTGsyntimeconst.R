@@ -1,11 +1,3 @@
-library(ggplot2)
-library(stringr)
-library(R.matlab)
-library(cowplot)
-library(expm)
-library(viridis)
-library(RColorBrewer)
-
 #################
 ### Load data ###
 #################
@@ -29,7 +21,7 @@ ROInames <- factor(ROInames, ordered = TRUE, levels = ROInames)
 ### Prepare model ###
 #####################
 
-W <- readMat('diffmodel/W.mat')$W
+W <- readMat(paste(params$opdir,'processed/W.mat',sep=''))$W
 n.regions <- nrow(W)
 W <- W * !diag(n.regions) # get rid of diagonal
 W <- diag(as.numeric(Synuclein)) %*% W
@@ -45,7 +37,7 @@ path.data.Grp <- lapply(tp,function(M) path.data[path.data$`Time post-injection 
 ROI <- 'R CPu'
 Xo <- make.Xo(ROI,ROInames)
 
-n.reps <- 5
+n.reps <- 100
 tf <- 0.5 # training fraction
 c.train.Grp <- r.Grp <- list()
 for(REP in 1:n.reps){
@@ -57,7 +49,7 @@ for(REP in 1:n.reps){
   # compute train and test means
   Grp.mean.train <- lapply(path.data.train.Grp, function(x) log(colMeans(x,na.rm = T),base=10))
   # fit time scale parameter on training data
-  Grp.fit <- c.fit.r(Grp.mean.train,L.out,tp,ROI,c.rng)
+  Grp.fit <- c.fit.r(Grp.mean.train,L.out,tp,ROI,c.rng,ROInames)
   c.train.Grp[[REP]] <- Grp.fit$c
   r.Grp[[REP]] <- Grp.fit$r
   

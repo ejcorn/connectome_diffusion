@@ -1,14 +1,3 @@
-rm(list=ls())
-library(ggplot2)
-library(stringr)
-library(R.matlab)
-library(cowplot)
-library(expm)
-library(viridis)
-library(RColorBrewer)
-library(cluster)
-library(scatterplot3d)
-
 #################
 ### Load data ###
 #################
@@ -43,11 +32,11 @@ L.out.d <- get.L.out(D)
 # Fit time scaling parameter
 c.rng <- seq(0.01,5,length.out = 100) # scaling parameter
 log.path <- lapply(Grp.mean, function(x) log(x,base=10))
-c.Grp <- c.fit(log.path,L.out.d,tp,ROI,c.rng) # fit time scale
+c.Grp <- c.fit(log.path,L.out.d,tp,ROI,c.rng,ROInames) # fit time scale
 mask <- lapply(log.path, function(x) x != -Inf)
 Xo <- make.Xo(ROI,ROInames)
 
-Xt.Grp <- lapply(tp, function(t) expm(-L.out.d*t*c.Grp) %*% Xo)
+Xt.Grp <- lapply(tp, function(t) predict.Lout(L.out.d,Xo,c.Grp,t))
 x <- do.call('cbind',Xt.Grp)
 p.SC <- p.vuln <- list()
 r.SC <- matrix(nrow=length(tp))
@@ -76,12 +65,11 @@ L.out.d <- get.L.out(D)
 # Fit time scaling parameter
 c.rng <- seq(0.01,3,length.out = 100) # scaling parameter
 log.path <- lapply(Grp.mean, function(x) log(x,base=10))
-c.Grp <- c.fit(log.path,L.out.d,tp,'R CPu',c.rng) # fit time scale
+c.Grp <- c.fit(log.path,L.out.d,tp,'R CPu',c.rng,ROInames) # fit time scale
 mask <- lapply(log.path, function(x) x != -Inf)
 n.regions <- length(ROInames)
-Xo <- matrix(0,nrow=n.regions)
-Xo[which(ROInames == 'R CPu')] <- 1 # seed ROI with path
-Xt.Grp <- lapply(tp, function(t) expm(-L.out.d*t*c.Grp) %*% Xo)
+Xo <- make.Xo('R CPu',ROInames) # seed ROI with path
+Xt.Grp <- lapply(tp, function(t) predict.Lout(L.out.d,Xo,c.Grp,t))
 x <- do.call('cbind',Xt.Grp)
 p.SC <- p.vuln <- list()
 r.SC <- matrix(nrow=length(tp))
@@ -119,10 +107,10 @@ L.out.d <- get.L.out(W)
 # Fit time scaling parameter
 c.rng <- seq(0.01,10,length.out = 100) # scaling parameter
 log.path <- lapply(Grp.mean, function(x) log(x,base=10))
-c.Grp <- c.fit(log.path,L.out.d,tp,'R CPu',c.rng) # fit time scale
+c.Grp <- c.fit(log.path,L.out.d,tp,'R CPu',c.rng,ROInames) # fit time scale
 mask <- lapply(log.path, function(x) x != -Inf)
 Xo <- make.Xo(ROI,ROInames)
-Xt.Grp <- lapply(tp, function(t) expm(-L.out.d*t*c.Grp) %*% Xo)
+Xt.Grp <- lapply(tp, function(t) predict.Lout(L.out.d,Xo,c.Grp,t))
 x <- do.call('cbind',Xt.Grp)
 p.SC <- p.vuln <- list()
 r.SC <- matrix(nrow=length(tp))

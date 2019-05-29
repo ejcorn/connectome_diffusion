@@ -22,7 +22,7 @@ Mice <- lapply(tp, function(M) path.data[path.data$`Time post-injection (months)
 Grp.mean <- lapply(Mice, function(x) colMeans(x,na.rm = T))
 
 
-p.SC <- mask <- list()
+p.SC <- mask <- c.tests <- list()
 r.SC <- matrix(nrow=length(tp))
 for(M in 1:length(tp)) {
   df <- data.frame(path = log(Grp.mean[[M]],base=10),Syn = as.numeric(Synuclein))
@@ -30,13 +30,18 @@ for(M in 1:length(tp)) {
   mask[[M]] <- df$path != -Inf & df$Syn != -Inf & !is.na(df$Syn)
   print(paste(sum(mask[[M]]),'regions')) # number of regions left after exclusion
   df <- df[mask[[M]],] 
-  print(paste(grp, 'Month',tp[M],'p =',cor.test(df$path,df$Syn)$p.value))
+  print(paste(grp, 'Month',tp[M]))
+  c.tests[[M]] <- cor.test(df$path,df$Syn)
+  print(c.tests[[M]])
   r.SC[M] <- cor(df$path,df$Syn)
   p.SC[[M]] <- ggplot(df,aes(x=Syn,y=path)) + geom_smooth(color = '#007257',method ='lm',size=1) + geom_point(color = '#007257',size = 1,alpha=0.6,stroke=0) +
     annotate(geom='text',x=max(df$Syn) - 0.2*diff(range(df$Syn)),y=min(df$path) + 0.1,label = paste('r =',signif(r.SC[M],2)),size=2.5) +
     theme_classic() + xlab('Snca expression') + ylab('log(Path.)') + ggtitle(paste('Month',tp[M])) +
     theme(text = element_text(size=8),plot.title = element_text(hjust=0.5,size=8))
 }
+
+p.vals <- p.adjust(sapply(c.tests, function(X) X$p.value),method='bonferroni')
+sapply(1:length(tp), function(M) print(paste(grp, 'Month',tp[M],'p_corr =',p.vals[M])))
 
 plts.SC <- plot_grid(plotlist = p.SC,nrow=1)
 ggsave(plts.SC,filename = paste(savedir,grp,'SynvsPath.pdf',sep=''),units = 'in',height = 1.5,width = 4.5)

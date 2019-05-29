@@ -1,12 +1,3 @@
-library(ggplot2)
-library(stringr)
-library(R.matlab)
-library(cowplot)
-library(expm)
-library(viridis)
-library(RColorBrewer)
-
-
 #################
 ### Load data ###
 #################
@@ -37,14 +28,14 @@ load(paste(params$opdir,'processed/Lout.RData',sep=''))
 
 c.rng <- seq(0.01,10,length.out = 100) # scaling parameter
 log.path <- lapply(Grp.mean, function(x) log(x,base=10))
-c.Grp <- c.fit(log.path,L.out,tp,'iCPu',c.rng)
+c.Grp <- c.fit(log.path,L.out,tp,'iCPu',c.rng,ROInames)
 
 ROIs <- c('iSN','iPir','iHipp','iM2','iCPu')
 
 for(ROI in ROIs){
   Xo <- matrix(0,nrow=n.regions)
   Xo[which(ROInames == ROI)] <- 1 # seed ROI with path
-  Xt.Grp <- do.call('cbind',lapply(tp, function(t) log(expm(-L.out*t*c.Grp) %*% Xo,base=10)))
+  Xt.Grp <- do.call('cbind',lapply(tp, function(t) log(predict.Lout(L.out,Xo,c.Grp,t),base=10)))
   colnames(Xt.Grp) <- c('Month 1','Month 3','Month 6')
   rownames(Xt.Grp) <- ROInames
   Xt.Grp <- Xt.Grp[orig.order,]
@@ -60,14 +51,14 @@ load(paste(params$opdir,'processed/Lout_syn.RData',sep=''))
 
 c.rng <- seq(0.01,10,length.out = 100) # scaling parameter
 log.path <- lapply(Grp.mean, function(x) log(x,base=10))
-c.Grp <- c.fit(log.path,L.out,tp,'iCPu',c.rng)
+c.Grp <- c.fit(log.path,L.out,tp,'iCPu',c.rng,ROInames)
 
 ROIs <- c('iSN','iPir','iHipp','iM2','iCPu')
 
 for(ROI in ROIs){
   Xo <- matrix(0,nrow=n.regions)
   Xo[which(ROInames == ROI)] <- 1 # seed ROI with path
-  Xt.Grp <- do.call('cbind',lapply(tp, function(t) log(expm(-L.out*t*c.Grp) %*% Xo,base=10)))
+  Xt.Grp <- do.call('cbind',lapply(tp, function(t) log(predict.Lout(L.out,Xo,c.Grp,t),base=10)))
   colnames(Xt.Grp) <- c('Month 1','Month 3','Month 6')
   rownames(Xt.Grp) <- ROInames
   Xt.Grp <- Xt.Grp[orig.order,]

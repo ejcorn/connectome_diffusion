@@ -1,14 +1,3 @@
-library(ggplot2)
-library(stringr)
-library(R.matlab)
-library(cowplot)
-library(expm)
-library(viridis)
-library(RColorBrewer)
-library(cluster)
-library(scatterplot3d)
-library(lm.beta)
-
 #################
 ### Load data ###
 #################
@@ -43,15 +32,14 @@ load(paste(params$opdir,'processed/Lout.RData',sep=''))
 # Fit time scaling parameter
 c.rng <- seq(0.01,10,length.out = 100) # scaling parameter
 log.path <- lapply(Grp.mean, function(x) log(x,base=10))
-c.Grp <- c.fit(log.path,L.out,tp,'R CPu',c.rng)
+c.Grp <- c.fit(log.path,L.out,tp,'R CPu',c.rng,ROInames)
 
 ########################
 ### Test base model  ###
 ########################
 
-Xo <- matrix(0,nrow=n.regions)
-Xo[which(ROInames == 'R CPu')] <- 1 # seed pathology in R CPu (actual injection site)
-Xt.Grp <- lapply(as.list(tp), function(t) expm(-L.out*t*c.Grp) %*% Xo)
+Xo <- make.Xo('R CPu',ROInames) # seed pathology in R CPu (actual injection site)
+Xt.Grp <- lapply(as.list(tp), function(t) predict.Lout(L.out,Xo,c.Grp,t))
 
 # make data frame of log path, log path prediction, and synuclein
 df.by.month <- lapply(1:length(tp), function(M) data.frame(path = log(Grp.mean[[M]],base=10), Xt = log(Xt.Grp[[M]],base = 10),Syn=as.numeric(Synuclein)))
@@ -83,9 +71,8 @@ c.rng <- seq(0.01,10,length.out = 100) # scaling parameter
 log.path <- lapply(Grp.mean, function(x) log(x,base=10))
 c.Grp <- c.fit(log.path,L.out,tp,'R CPu',c.rng)
 
-Xo <- matrix(0,nrow=n.regions)
-Xo[which(ROInames == 'R CPu')] <- 1 # seed pathology in R CPu (actual injection site)
-Xt.Grp <- lapply(as.list(tp), function(t) expm(-L.out*t*c.Grp) %*% Xo)
+Xo <- make.Xo('R CPu',ROInames) # seed pathology in R CPu (actual injection site)
+Xt.Grp <- lapply(as.list(tp), function(t) predict.Lout(L.out,Xo,c.Grp,t))
 
 # make data frame of log path, log path prediction, and synuclein
 df.by.month <- lapply(1:length(tp), function(M) data.frame(path = log(Grp.mean[[M]],base=10), Xt = log(Xt.Grp[[M]],base = 10),Syn=as.numeric(Synuclein)))

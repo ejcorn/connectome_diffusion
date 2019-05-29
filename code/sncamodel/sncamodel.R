@@ -1,11 +1,3 @@
-library(ggplot2)
-library(stringr)
-library(R.matlab)
-library(cowplot)
-library(expm)
-library(viridis)
-library(RColorBrewer)
-
 #################
 ### Load data ###
 #################
@@ -90,7 +82,7 @@ c.rng <- seq(0.01,10,length.out = 100) # scaling parameter
 log.path <- lapply(Grp.mean, function(x) log(x,base=10))
 mask <- lapply(log.path, function(x) x != -Inf)
 lapply(1:length(tp), function(i) cor(log.path[[i]][mask[[i]]],Synuclein[mask[[i]]]))
-c.Grp <- c.fit(log.path,L.out,tp,'R CPu',c.rng)
+c.Grp <- c.fit(log.path,L.out,tp,'R CPu',c.rng,ROInames)
 
 ###############################################
 ### Test model at observed points for group ###
@@ -99,8 +91,8 @@ c.Grp <- c.fit(log.path,L.out,tp,'R CPu',c.rng)
 Xo <- matrix(0,nrow=n.regions)
 vulnerability <- mask <- list()
 Xo[which(ROInames == 'R CPu')] <- 1
-Xt.Grp <- lapply(as.list(tp), function(t) expm(-L.out*t*c.Grp) %*% Xo)
-p.SC <- p.vuln <- list()
+Xt.Grp <- lapply(as.list(tp), function(t) predict.Lout(L.out,Xo,c.Grp,t))
+p.SC <- p.vuln <- c.tests <- list()
 r.SC <- matrix(nrow=length(tp))
 for(M in 1:length(tp)) {
   df <- data.frame(path = log(Grp.mean[[M]],base=10), Xt = log(Xt.Grp[[M]],base = 10))# + scale(as.numeric(Synuclein),center=T))
@@ -108,6 +100,8 @@ for(M in 1:length(tp)) {
   print(paste(sum(mask[[M]]),'regions')) # number of regions left after exclusion
   df <- df[mask[[M]],]
   print(paste(grp, 'Month',tp[M],'p =',cor.test(df$path,df$Xt)$p.value))
+  c.tests[[M]] <- cor.test(df$path,df$Xt)
+  print(c.tests[[M]]) # show t-stats, df and p-values
   r.SC[M] <- cor(df$path,df$Xt)
   p.SC[[M]] <- ggplot(df,aes(x=Xt,y=path)) + geom_smooth(color = '#007257',method ='lm',size=1) + geom_point(color = '#007257',size = 1,alpha=0.6,stroke=0) +
     annotate(geom='text',x=max(df$Xt) - 0.2*diff(range(df$Xt)),y=min(df$path) + 0.1,label = paste('r =',signif(r.SC[M],2)),size=2.5) +
@@ -120,6 +114,10 @@ for(M in 1:length(tp)) {
     ggtitle(paste('Month ',tp[M])) + xlab('') + ylab('Vulnerability') + 
     theme(text=element_text(size=8),axis.text.x = element_text(angle=90,size=4,vjust=0.5,hjust = 1),plot.title = element_text(size=8,hjust = 0.5))
 }
+
+p.vals <- p.adjust(sapply(c.tests, function(X) X$p.value),method='bonferroni')
+sapply(1:length(tp), function(M) print(paste(grp, 'Month',tp[M],'p_corr =',p.vals[M])))
+
 save(r.SC,file = paste(savedir,grp,'cor.RData',sep=''))
 plts.SC <- plot_grid(plotlist = p.SC,nrow=1)
 ggsave(plts.SC,filename = paste(savedir,grp,'predictedpathcontinuous.pdf',sep=''),units = 'in',height = 1.5,width = 4.5)
