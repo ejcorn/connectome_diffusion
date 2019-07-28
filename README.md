@@ -1,6 +1,6 @@
 # connectome_diffusion
 
-Code to reproduce all analysis in Henderson et al. 2019 ("α-Synuclein pathology spread through the brain connectome is modulated by selective vulnerability and genetic risk factors").
+Code to reproduce all analysis in Henderson et al. 2019 ("Spread of α-synuclein pathology through the brain connectome is modulated by selective vulnerability and predicted by network analysis", https://www.nature.com/articles/s41593-019-0457-5).
 
 ## Requirements:
   - MATLAB R2017a or later
