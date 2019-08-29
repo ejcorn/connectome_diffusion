@@ -151,8 +151,8 @@ for(ROI in low.vuln){
   ggsave(plot = p,filename = paste(savedir,'roilevel/Syn',grp,'_',ROInames[ROI],'.pdf',sep=''),width = 3,height = 3,units = 'in')
 }
 
-write.csv(do.call('cbind',vulnerability),paste(savedir,grp,'vulnerabilityEli.csv',sep=''),row.names = F)
-write.csv(do.call('cbind',Xt.Grp),paste(savedir,grp,'predictedpathEli.csv'),row.names = F)
+write.csv(do.call('cbind',vulnerability),paste(savedir,'Syn',grp,'vulnerabilityEli.csv',sep=''),row.names = F)
+write.csv(do.call('cbind',Xt.Grp),paste(savedir,'Syn',grp,'predictedpathEli.csv',sep=''),row.names = F)
 v.names <- c(sapply(conn.names, function(x) paste('i',x,sep='')),
              sapply(conn.names, function(x) paste('c',x,sep='')))
 
