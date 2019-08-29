@@ -34,8 +34,13 @@ path.data <- cbind(data[,(1:2)],path.data.ipsi[,order(match(path.names.ipsi,conn
 colnames(path.data)[2] <- 'Condition'
 
 # tile matrix such that sources are rows, columns are targets (see Oh et al. 2014 Fig 4)
+rownames(connectivity.ipsi) <- conn.names; colnames(connectivity.ipsi) <- conn.names
+rownames(connectivity.contra) <- conn.names; colnames(connectivity.contra) <- conn.names
 W <- rbind(cbind(connectivity.ipsi,connectivity.contra),cbind(connectivity.contra,connectivity.ipsi))
 n.regions <- nrow(W)
+
+# check that matrix was tiled correctly
+if(sum(W[1:58,1:58] != W[59:116,59:116]) > 0){print('failed matrix concatenation'); break}
 
 # retain indices to reorder like original data variable for plotting on mouse brains
 ROInames <- c(sapply(conn.names, function(x) paste('i',x,sep='')),
